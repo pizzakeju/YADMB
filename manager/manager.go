@@ -25,20 +25,22 @@ var (
 
 // NewServer creates a new server manager
 func NewServer(guildID snowflake.ID, clients *Clients) *Server {
-	return &Server{
+	s := &Server{
 		Queue:   queue.NewQueue(),
 		GuildID: guildID,
 		Pause:   make(chan struct{}, 1),
 		Resume:  make(chan struct{}, 1),
 		Skip:    make(chan SkipReason, 1),
 		Seek:    make(chan int, 1),
-		Started: atomic.Bool{},
+		Restart: make(chan struct{}, 1),
 		Clear:   atomic.Bool{},
 		Paused:  atomic.Bool{},
 		WG:      &sync.WaitGroup{},
 		Clients: clients,
 		VC:      vc.NewVC(guildID),
 	}
+	s.Volume.Store(100)
+	return s
 }
 
 // AddSong adds a song to the queue
@@ -92,7 +94,7 @@ func (server *Server) startPlaybackLocked() {
 	drain(server.Pause)
 	drain(server.Resume)
 	drain(server.Seek)
-
+	drain(server.Restart)
 	done := make(chan struct{})
 	server.playDone = done
 
@@ -137,6 +139,9 @@ func (server *Server) play(done chan struct{}) {
 		if el == nil {
 			break
 		}
+
+		// A server-wide loop toggle applies on top of the per-song one.
+		el.Loop = el.Loop || server.LoopAll.Load()
 
 		// Send "Now playing" message
 		go func() {
@@ -215,6 +220,16 @@ func (server *Server) play(done chan struct{}) {
 		}
 
 		server.Queue.RemoveFirstElement()
+
+		if el != nil && (skipReason == Finished || skipReason == Skip) {
+			server.setLastPlayed(el)
+		}
+
+		// When the queue is done and autoplay is enabled, keep playing similar
+		// songs in the background.
+		if skipReason == Finished && server.Autoplay.Load() && server.Queue.IsEmpty() {
+			go server.autoplayNext(el)
+		}
 	}
 
 	if server.Clear.Load() {
@@ -441,4 +456,51 @@ func drain[T any](ch chan T) {
 			return
 		}
 	}
+}
+
+func (server *Server) setLastPlayed(el *queue.Element) {
+	server.prevMu.Lock()
+	defer server.prevMu.Unlock()
+
+	copy := *el
+	server.lastPlayed = &copy
+}
+
+// LastPlayed returns a copy of the last finished/skipped element.
+func (server *Server) LastPlayed() *queue.Element {
+	server.prevMu.Lock()
+	defer server.prevMu.Unlock()
+
+	if server.lastPlayed == nil {
+		return nil
+	}
+
+	copy := *server.lastPlayed
+	return &copy
+}
+
+// autoplayNext searches for a similar song and enqueues it once the queue has
+// finished. It is best-effort: failures are logged and ignored.
+func (server *Server) autoplayNext(el *queue.Element) {
+	if server.Clients == nil || el == nil {
+		return
+	}
+
+	link, err := searchDownloadAndPlay(el.Title, server.Clients.Youtube, server.Clients.Database)
+	if err != nil {
+		slog.Warn("autoplay: could not find a similar song", "error", err)
+		return
+	}
+
+	server.Play(PlayEvent{
+		Username:    el.User,
+		Song:        link,
+		Clients:     server.Clients,
+		Event:       nil,
+		Random:      false,
+		Loop:        server.LoopAll.Load(),
+		Priority:    false,
+		IsDeferred:  nil,
+		TextChannel: el.TextChannel,
+	})
 }

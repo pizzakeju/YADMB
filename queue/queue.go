@@ -1,7 +1,9 @@
 package queue
 
 import (
+	"fmt"
 	"io"
+	"math/rand/v2"
 	"sync"
 
 	"github.com/disgoorg/snowflake/v2"
@@ -157,6 +159,57 @@ func (q *Queue) ModifyFirstElement(f func(*Element)) {
 	if len(q.Queue) > 0 {
 		f(&q.Queue[0])
 	}
+}
+
+// Move moves the element at index from to index to (both zero-based). The
+// element is removed and re-inserted, so indexes refer to positions in the
+// queue before the operation.
+func (q *Queue) Move(from, to int) error {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	n := len(q.Queue)
+	if from < 0 || from >= n || to < 0 || to >= n {
+		return fmt.Errorf("index out of range")
+	}
+
+	if from == to {
+		return nil
+	}
+
+	el := q.Queue[from]
+	q.Queue = append(q.Queue[:from], q.Queue[from+1:]...)
+	q.Queue = append(q.Queue[:to], append([]Element{el}, q.Queue[to:]...)...)
+	return nil
+}
+
+// RemoveAt removes the element at the given zero-based index.
+func (q *Queue) RemoveAt(index int) error {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	if index < 0 || index >= len(q.Queue) {
+		return fmt.Errorf("index out of range")
+	}
+
+	q.Queue = append(q.Queue[:index], q.Queue[index+1:]...)
+	return nil
+}
+
+// ShuffleRemaining shuffles every element after the first one, leaving the
+// currently playing song in place.
+func (q *Queue) ShuffleRemaining() {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	if len(q.Queue) < 3 {
+		return
+	}
+
+	rest := q.Queue[1:]
+	rand.Shuffle(len(rest), func(i, j int) {
+		rest[i], rest[j] = rest[j], rest[i]
+	})
 }
 
 // GetLength returns the length of the queue

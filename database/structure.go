@@ -31,6 +31,21 @@ type Database struct {
 	GetPlaylist         func(playlist string) ([]string, error)
 	AddPlaylist         func(playlist, entry string, number int) error
 	RemovePlaylist      func(playlist string) error
+	CreatePlaylist      func(guild snowflake.ID, name string) error
+	DeletePlaylist      func(guild snowflake.ID, name string) error
+	RenamePlaylist      func(guild snowflake.ID, oldName, newName string) error
+	ListPlaylists       func(guild snowflake.ID) []PlaylistInfo
+	GetPlaylistEntries  func(guild snowflake.ID, name string) []string
+	AddToPlaylist       func(guild snowflake.ID, name, entry string) error
+	RemoveFromPlaylist  func(guild snowflake.ID, name string, position int) error
+	RemoveDuplicates    func(guild snowflake.ID, name string) error
+	SavePlaylist        func(guild snowflake.ID, name string, entries []string) error
+}
+
+// PlaylistInfo describes a user-created playlist.
+type PlaylistInfo struct {
+	Name  string
+	Count int
 }
 
 // CustomCommand holds data about a custom command

@@ -60,13 +60,45 @@ a shortform in parentheses:
 - `-playlist` / `-pl` <link> [-shuffle] [-loop] [-priority] - Same as `-play`, but accepts playlists
 - `-stream` / `-st` <url> - Streams a song from the given URL
 - `-skip` / `-s` - Skips the currently playing song
-- `-clear` / `-c` - Clears the queue
+- `-clear` / `-c` (alias `-clearqueue`) - Clears the queue
 - `-pause` / `-pa` - Pauses the current song
 - `-resume` / `-r` - Resumes the current song
 - `-queue` / `-q` - Shows the current queue
-- `-disconnect` / `-dc` - Stops playback and disconnects the bot from the voice channel
+- `-disconnect` / `-dc` (alias `-leave`, `-stop`) - Stops playback and leaves the voice channel
+- `-autoplay` - Toggles automatically playing similar songs when the queue ends
+- `-backward` - Restarts the current song
+- `-forward` - Jumps forward 10 seconds
+- `-join` - Joins your voice channel without playing
+- `-loop` - Toggles looping the current song
+- `-lyrics` - Shows lyrics for the current song (from lyrics.ovh)
+- `-move <from> <to>` - Moves a queued song to another position
+- `-nowplaying` / `-np` - Shows the current song and progress
+- `-previous` / `-prev` - Re-plays the last finished/skipped song
+- `-remove` / `-rm` <position> - Removes the song at that queue position (1 = first upcoming)
+- `-seek <seconds|±seconds>` - Seeks to an absolute position or relative offset
+- `-shuffle` / `-sh` - Shuffles the remaining queue
+- `-skipto <position>` - Skips ahead to the song at that position
+- `-volume` / `-vol` <0-200> - Sets playback volume in percent (100 = normal)
 - `-help` / `-h` - Lists the available prefix commands
 
-Prefix commands respect the same restrictions as slash commands: blacklist,
-whitelist and DJ mode apply. The bot needs the `MESSAGE CONTENT` intent
-enabled in the Discord developer portal for `-play <query>` style parsing.
+## Playlist commands (`pl-*`)
+
+User-created playlists are stored per guild. Songs are saved as links, so the
+same sources accepted by `-play` work (YouTube, Spotify, generic URLs).
+
+- `-pl-create <name>` - Creates an empty playlist
+- `-pl-delete <name>` - Deletes a playlist
+- `-pl-rename <old> <new>` - Renames a playlist
+- `-pl-list` - Lists all playlists of the guild
+- `-pl-info <name>` - Shows the songs in a playlist
+- `-pl-play <name> [-shuffle] [-loop] [-priority]` - Plays a playlist
+- `-pl-playshuffle <name>` - Plays a playlist shuffled
+- `-pl-removedupe <name>` - Removes duplicate entries
+- `-pl-removetrack <name> <position>` - Removes one entry by position
+- `-pl-savecurrent <name>` - Saves the currently playing song as a playlist
+- `-pl-savequeue <name>` - Saves the whole queue as a playlist
+
+Prefix and playlist commands respect the same restrictions as slash commands:
+blacklist, whitelist and DJ mode apply. The bot needs the `MESSAGE CONTENT`
+intent enabled in the Discord developer portal for `-play <query>` style
+parsing.

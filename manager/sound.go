@@ -15,6 +15,7 @@ import (
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/disgoorg/disgo/voice"
+	"layeh.com/gopus"
 )
 
 // ErrVoiceLost is returned by the playback loop when the voice connection could
@@ -42,8 +43,9 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		started    bool
 		skipReason SkipReason
 		err        error
+		dec        *gopus.Decoder
+		enc        *gopus.Encoder
 	)
-
 	conn, err := server.ensureVoiceUDP()
 	if err != nil {
 		return Error, err
@@ -81,6 +83,17 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			}
 		case target := <-server.Seek:
 			seekToFrame(el, target, int(server.Frames.Load()))
+		case <-server.Restart:
+			cleanUp(server, el.Closer)
+			if el.ID != "" {
+				f, err := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
+				if err != nil {
+					return Error, err
+				}
+				el.Reader = bufio.NewReader(f)
+				el.Closer = f
+			}
+			server.notifySync(0, true)
 		case skipReason = <-server.Skip:
 			cleanUp(server, el.Closer)
 			return skipReason, nil
@@ -187,7 +200,16 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				continue
 			}
 
-			conn, err = server.writeFrame(conn, InBuf)
+			opusFrame := InBuf
+			if vol := server.Volume.Load(); vol != 100 {
+				opusFrame, err = server.scaleFrame(&dec, &enc, InBuf, vol)
+				if err != nil {
+					cleanUp(server, el.Closer)
+					return Error, err
+				}
+			}
+
+			conn, err = server.writeFrame(conn, opusFrame)
 			if err != nil {
 				cleanUp(server, el.Closer)
 				return Error, err
@@ -378,4 +400,40 @@ func cleanUp(server *Server, closer io.Closer) {
 	if closer != nil {
 		_ = closer.Close()
 	}
+}
+
+// scaleFrame decodes an Opus frame, applies a volume gain and re-encodes it.
+// It is only used when the volume differs from 100%.
+func (server *Server) scaleFrame(dec **gopus.Decoder, enc **gopus.Encoder, data []byte, volume int32) ([]byte, error) {
+	if *dec == nil {
+		d, err := gopus.NewDecoder(audioSampleRate, audioChannels)
+		if err != nil {
+			return nil, err
+		}
+		*dec = d
+
+		e, err := gopus.NewEncoder(audioSampleRate, audioChannels, gopus.Audio)
+		if err != nil {
+			return nil, err
+		}
+		e.SetBitrate(audioBitrate)
+		*enc = e
+	}
+
+	buf := make([]int16, audioFrameSize*audioChannels)
+	pcm, err := (*dec).Decode(data, len(buf), false)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range pcm {
+		pcm[i] = int16(int32(pcm[i]) * volume / 100)
+	}
+
+	out, err := (*enc).Encode(pcm, audioFrameSize, pcmFrameBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }

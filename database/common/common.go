@@ -292,6 +292,109 @@ func (c Common) RemovePlaylist(playlist string) error {
 	return err
 }
 
+func (c Common) CreatePlaylist(guild snowflake.ID, name string) error {
+	_, err := c.db.Exec("INSERT INTO userPlaylists (guild, name, position, entry) VALUES (?, ?, 0, '')", guild, name)
+	return err
+}
+
+func (c Common) DeletePlaylist(guild snowflake.ID, name string) error {
+	_, err := c.db.Exec("DELETE FROM userPlaylists WHERE guild=? AND name=?", guild, name)
+	return err
+}
+
+func (c Common) RenamePlaylist(guild snowflake.ID, oldName, newName string) error {
+	_, err := c.db.Exec("UPDATE userPlaylists SET name=? WHERE guild=? AND name=?", newName, guild, oldName)
+	return err
+}
+
+func (c Common) ListPlaylists(guild snowflake.ID) []database.PlaylistInfo {
+	rows, err := c.db.Query("SELECT name, COUNT(CASE WHEN position > 0 THEN 1 END) FROM userPlaylists WHERE guild=? GROUP BY name ORDER BY name", guild)
+	if err != nil {
+		slog.Error("Error listing playlists", "error", err)
+		return nil
+	}
+	defer rows.Close()
+
+	playlists := make([]database.PlaylistInfo, 0)
+	for rows.Next() {
+		var (
+			name  string
+			count int
+		)
+		if err := rows.Scan(&name, &count); err != nil {
+			slog.Error("Error scanning playlist row", "error", err)
+			continue
+		}
+		playlists = append(playlists, database.PlaylistInfo{Name: name, Count: count})
+	}
+
+	return playlists
+}
+
+func (c Common) GetPlaylistEntries(guild snowflake.ID, name string) []string {
+	rows, err := c.db.Query("SELECT entry FROM userPlaylists WHERE guild=? AND name=? AND position>0 ORDER BY position", guild, name)
+	if err != nil {
+		slog.Error("Error getting playlist entries", "error", err)
+		return nil
+	}
+	defer rows.Close()
+
+	entries := make([]string, 0)
+	for rows.Next() {
+		var entry string
+		if err := rows.Scan(&entry); err != nil {
+			slog.Error("Error scanning playlist entry", "error", err)
+			continue
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries
+}
+
+func (c Common) AddToPlaylist(guild snowflake.ID, name, entry string) error {
+	var pos int
+	if err := c.db.QueryRow("SELECT COALESCE(MAX(position),0)+1 FROM userPlaylists WHERE guild=? AND name=?", guild, name).Scan(&pos); err != nil {
+		pos = 1
+	}
+
+	_, err := c.db.Exec("INSERT INTO userPlaylists (guild, name, position, entry) VALUES (?, ?, ?, ?)", guild, name, pos, entry)
+	return err
+}
+
+func (c Common) RemoveFromPlaylist(guild snowflake.ID, name string, position int) error {
+	_, err := c.db.Exec("DELETE FROM userPlaylists WHERE guild=? AND name=? AND position=?", guild, name, position)
+	return err
+}
+
+func (c Common) RemoveDuplicates(guild snowflake.ID, name string) error {
+	_, err := c.db.Exec(`DELETE FROM userPlaylists WHERE guild=? AND name=? AND position NOT IN (
+		SELECT minp FROM (SELECT MIN(position) AS minp FROM userPlaylists WHERE guild=? AND name=? GROUP BY entry)
+	)`, guild, name, guild, name)
+	return err
+}
+
+func (c Common) SavePlaylist(guild snowflake.ID, name string, entries []string) error {
+	tx, err := c.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM userPlaylists WHERE guild=? AND name=?", guild, name); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	for i, entry := range entries {
+		if _, err := tx.Exec("INSERT INTO userPlaylists (guild, name, position, entry) VALUES (?, ?, ?, ?)", guild, name, i+1, entry); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (c Common) Close() {
 	_ = c.db.Close()
 }

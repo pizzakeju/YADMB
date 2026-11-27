@@ -50,16 +50,27 @@ type Server struct {
 	Pause chan struct{}
 	// Channel for resuming
 	Resume chan struct{}
-	// Channel for seeking to a frame
-	Seek chan int
 	// Wait group for waiting for spotify to finish before lowering the clear flag
 	WG *sync.WaitGroup
+	// Channel for seeking to a frame
+	Seek chan int
+	// Channel for restarting the current song
+	Restart chan struct{}
 	// Role ID for the DJ role
 	DjRole snowflake.ID
 	// Whether the DJ mode is enabled
 	DjMode bool
 	// Protects the DJ settings
 	djMu sync.RWMutex
+	// Whether every song should loop
+	LoopAll atomic.Bool
+	// Whether to keep playing similar songs when the queue finishes
+	Autoplay atomic.Bool
+	// Volume in percent (0-200), 100 = unchanged
+	Volume atomic.Int32
+	// Last played element, used by the previous command
+	prevMu     sync.Mutex
+	lastPlayed *queue.Element
 	// Clients used for interacting with the various APIs
 	Clients *Clients
 	// Mutexes and state used by the player
