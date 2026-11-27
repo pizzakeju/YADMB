@@ -94,7 +94,17 @@ func messageCreate(e *events.MessageCreate) {
 		// Run the command in its own goroutine: voice joins block waiting for
 		// the VOICE_SERVER_UPDATE event, so running them synchronously would
 		// stall the gateway event loop and the join would time out.
+		go deleteTriggerMessage(e)
 		go dispatchMessageCommand(cmd, srv, e, fields[1:])
+	}
+}
+
+// deleteTriggerMessage removes the user message that invoked a prefix command.
+// It requires the "Manage Messages" permission on the channel; failures are
+// logged at debug level and ignored.
+func deleteTriggerMessage(e *events.MessageCreate) {
+	if err := e.Client().Rest.DeleteMessage(e.ChannelID, e.MessageID); err != nil {
+		slog.Debug("could not delete command message", "channel", e.ChannelID, "message", e.MessageID, "error", err)
 	}
 }
 
