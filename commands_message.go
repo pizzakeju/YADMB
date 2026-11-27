@@ -90,12 +90,22 @@ func messageCreate(e *events.MessageCreate) {
 						"• Use `-help` / `-h` anytime.", false)
 		})
 		sendMsg(e, builder, 30*time.Second)
+	default:
+		// Run the command in its own goroutine: voice joins block waiting for
+		// the VOICE_SERVER_UPDATE event, so running them synchronously would
+		// stall the gateway event loop and the join would time out.
+		go dispatchMessageCommand(cmd, srv, e, fields[1:])
+	}
+}
+
+func dispatchMessageCommand(cmd string, srv *manager.Server, e *events.MessageCreate, args []string) {
+	switch cmd {
 	case "play":
-		playMessage(srv, e, fields[1:], false)
+		playMessage(srv, e, args, false)
 	case "playlist":
-		playMessage(srv, e, fields[1:], true)
+		playMessage(srv, e, args, true)
 	case "stream":
-		streamMessage(srv, e, fields[1:])
+		streamMessage(srv, e, args)
 	case "skip":
 		skipMessage(srv, e)
 	case "clear":
@@ -121,43 +131,43 @@ func messageCreate(e *events.MessageCreate) {
 	case "lyrics":
 		lyricsMessage(srv, e)
 	case "move":
-		moveMessage(srv, e, fields[1:])
+		moveMessage(srv, e, args)
 	case "nowplaying":
 		nowPlayingMessage(srv, e)
 	case "previous":
 		previousMessage(srv, e)
 	case "remove":
-		removeMessage(srv, e, fields[1:])
+		removeMessage(srv, e, args)
 	case "seek":
-		seekMessage(srv, e, fields[1:])
+		seekMessage(srv, e, args)
 	case "shuffle":
 		shuffleMessage(srv, e)
 	case "skipto":
-		skiptoMessage(srv, e, fields[1:])
+		skiptoMessage(srv, e, args)
 	case "volume":
-		volumeMessage(srv, e, fields[1:])
+		volumeMessage(srv, e, args)
 	case "pl-create":
-		playlistCreateMessage(srv, e, fields[1:])
+		playlistCreateMessage(srv, e, args)
 	case "pl-delete":
-		playlistDeleteMessage(srv, e, fields[1:])
+		playlistDeleteMessage(srv, e, args)
 	case "pl-info":
-		playlistInfoMessage(srv, e, fields[1:])
+		playlistInfoMessage(srv, e, args)
 	case "pl-list":
 		playlistListMessage(srv, e)
 	case "pl-play":
-		playlistPlayMessage(srv, e, fields[1:], false)
+		playlistPlayMessage(srv, e, args, false)
 	case "pl-playshuffle":
-		playlistPlayMessage(srv, e, fields[1:], true)
+		playlistPlayMessage(srv, e, args, true)
 	case "pl-removedupe":
-		playlistDedupeMessage(srv, e, fields[1:])
+		playlistDedupeMessage(srv, e, args)
 	case "pl-removetrack":
-		playlistRemoveTrackMessage(srv, e, fields[1:])
+		playlistRemoveTrackMessage(srv, e, args)
 	case "pl-rename":
-		playlistRenameMessage(srv, e, fields[1:])
+		playlistRenameMessage(srv, e, args)
 	case "pl-savecurrent":
-		playlistSaveMessage(srv, e, fields[1:], false)
+		playlistSaveMessage(srv, e, args, false)
 	case "pl-savequeue":
-		playlistSaveMessage(srv, e, fields[1:], true)
+		playlistSaveMessage(srv, e, args, true)
 	}
 }
 
