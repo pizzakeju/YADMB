@@ -61,7 +61,14 @@ func messageCreate(e *events.MessageCreate) {
 
 	switch cmd {
 	case "help":
-		sendMsg(e, embed.Info("ℹ️ Help", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -dc | -help / -h"), 15*time.Second)
+		builder := styled(func(b discord.Embed) discord.Embed {
+			return b.WithTitle("ℹ️ Help").WithColor(embed.ColorBlurple).
+				AddField("Playback", "-play/-p <link|query> [-shuffle] [-loop] [-priority]\n-playlist/-pl <link> [-shuffle] [-loop] [-priority]\n-stream/-st <url>\n-previous/-prev | -nowplaying/-np", false).
+				AddField("Control", "-skip/-s | -clear/-c (clearqueue) | -pause/-pa | -resume/-r\n-disconnect/-dc (leave, stop)\n-seek <s|±s> | -forward | -backward | -skipto <n>\n-move <from> <to> | -remove/-rm <n> | -shuffle/-sh\n-loop | -autoplay | -volume/-vol <0-200> | -join", false).
+				AddField("Playlists", "-pl-create/-pl-delete <name>\n-pl-rename <old> <new> | -pl-list | -pl-info <name>\n-pl-play <name> [-shuffle] [-loop] [-priority] | -pl-playshuffle <name>\n-pl-removedupe <name> | -pl-removetrack <name> <pos>\n-pl-savecurrent <name> | -pl-savequeue <name>", false).
+				AddField("Other", "-help/-h", false)
+		})
+		sendMsg(e, builder, 30*time.Second)
 	case "play":
 		playMessage(srv, e, fields[1:], false)
 	case "playlist":
