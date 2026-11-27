@@ -260,7 +260,7 @@ func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, pl
 		return
 	}
 
-	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+	if err := ensureVoice(srv, *vs.ChannelID); err != nil {
 		msg := constants.CantJoinVC
 		if err == vc.ErrAlreadyConnected {
 			msg = constants.BotInAnotherVC
@@ -313,7 +313,7 @@ func streamMessage(srv *manager.Server, e *events.MessageCreate, args []string) 
 		return
 	}
 
-	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+	if err := ensureVoice(srv, *vs.ChannelID); err != nil {
 		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
@@ -461,7 +461,7 @@ func joinMessage(srv *manager.Server, e *events.MessageCreate) {
 		return
 	}
 
-	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+	if err := ensureVoice(srv, *vs.ChannelID); err != nil {
 		msg := constants.CantJoinVC
 		if err == vc.ErrAlreadyConnected {
 			msg = constants.BotInAnotherVC
@@ -532,7 +532,7 @@ func previousMessage(srv *manager.Server, e *events.MessageCreate) {
 		return
 	}
 
-	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+	if err := ensureVoice(srv, *vs.ChannelID); err != nil {
 		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
@@ -831,7 +831,7 @@ func playlistPlayMessage(srv *manager.Server, e *events.MessageCreate, args []st
 		return
 	}
 
-	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+	if err := ensureVoice(srv, *vs.ChannelID); err != nil {
 		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
