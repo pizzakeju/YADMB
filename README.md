@@ -1,4 +1,4 @@
-# YADMB
+# GRUPI
 
 Yet Another Discord Music Bot - A music bot written in go
 

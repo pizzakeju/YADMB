@@ -17,7 +17,7 @@ git clone https://github.com/TheTipo01/YADMB
 Enter the directory, and build the bot
 
 ```Bash
-cd YADMB
+cd GRUPI
 go build
 ```
 
@@ -41,7 +41,7 @@ Final things:
   (see [here](hosting.md) if you don't know how to do it)
 - Rename it in `config.yml` and move it in the `data` directory
 - Run `docker-compose up -d`
-- Enjoy your YADMB instance!
+- Enjoy your GRUPI instance!
 
 Note: the docker image is available
 on [Docker hub](https://hub.docker.com/r/thetipo01/yadmb), [Quay.io](https://quay.io/repository/thetipo01/yadmb)

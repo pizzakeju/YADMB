@@ -28,7 +28,7 @@ const prefix = "-"
 
 // styled builds an embed with the shared footer.
 func styled(build func(b discord.Embed) discord.Embed) discord.Embed {
-	return build(discord.NewEmbed()).WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+	return build(discord.NewEmbed()).WithFooterText("GRUPI").WithTimestamp(time.Now())
 }
 
 // messageCreate handles prefix commands in guild text channels.
@@ -62,7 +62,7 @@ func messageCreate(e *events.MessageCreate) {
 	switch cmd {
 	case "help":
 		builder := styled(func(b discord.Embed) discord.Embed {
-			return b.WithTitle("🎧 YADMB — Command Help").
+			return b.WithTitle("🎧 GRUPI — Command Help").
 				WithDescription("Control the bot with **prefix commands** in any text channel — shortforms are shown in parentheses. The same actions exist as slash commands.").
 				WithColor(embed.ColorBlurple).
 				AddField("🎵 Playback",

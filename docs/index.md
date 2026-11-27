@@ -1,4 +1,4 @@
-# YADMB
+# GRUPI
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/TheTipo01/YADMB)](https://goreportcard.com/report/github.com/TheTipo01/YADMB)
 

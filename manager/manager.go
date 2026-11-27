@@ -149,7 +149,7 @@ func (server *Server) play(done chan struct{}) {
 				AddField("", fmt.Sprintf("[%s](%s) - %s\nRequested by %s", el.Title,
 					el.Link, el.Duration, el.User), false).
 				WithColor(embed.ColorBlurple).WithThumbnail(el.Thumbnail).
-				WithFooterText("YADMB music bot").WithTimestamp(time.Now()), el.TextChannel)
+				WithFooterText("GRUPI").WithTimestamp(time.Now()), el.TextChannel)
 		}()
 
 		var err error
@@ -178,7 +178,7 @@ func (server *Server) play(done chan struct{}) {
 			go func() {
 				processingMsg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle("⏳ Processing").
 					AddField("", constants.Processing, false).
-					WithColor(embed.ColorYellow).WithFooterText("YADMB music bot").WithTimestamp(time.Now()), el.TextChannel)
+					WithColor(embed.ColorYellow).WithFooterText("GRUPI").WithTimestamp(time.Now()), el.TextChannel)
 			}()
 
 			// The background encoder keeps writing on its own, so there is no

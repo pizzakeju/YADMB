@@ -276,7 +276,7 @@ var (
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle("⏭ Skipped").
 						AddField("", el.Title+" - "+el.Duration+" added by "+el.User, false).
 						WithColor(embed.ColorGreen).WithThumbnail(el.Thumbnail).
-						WithFooterText("YADMB music bot").WithTimestamp(time.Now()), e, time.Second*5, nil)
+						WithFooterText("GRUPI").WithTimestamp(time.Now()), e, time.Second*5, nil)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(embed.Info("⏭ Skipped", constants.QueueEmpty), e, time.Second*5, nil)
 				}
@@ -314,7 +314,7 @@ var (
 
 				builder := discord.NewEmbed().WithTitle("📋 Queue").AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
 					manager.FormatDuration(float64(getServer(guildID).Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false).
-					WithColor(embed.ColorBlurple).WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+					WithColor(embed.ColorBlurple).WithFooterText("GRUPI").WithTimestamp(time.Now())
 
 				var nEl int
 				if len(el) > maxQueue {
@@ -512,7 +512,7 @@ var (
 				AddField("Latency", e.Client().Gateway.Latency().String(), false).AddField("Guilds", strconv.Itoa(e.Client().Caches.GuildsLen()), false).
 				AddField("Cached song", strconv.Itoa(files)+", "+
 					manager.ByteCountSI(size), false).WithColor(embed.ColorBlurple).
-				WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+				WithFooterText("GRUPI").WithTimestamp(time.Now())
 
 			embed.SendAndDeleteEmbedInteraction(builder, e, time.Second*15, nil)
 		},
@@ -770,7 +770,7 @@ var (
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().ID()})
 				msgEmbed := discord.NewEmbed().WithTitle("🌐 Web UI").AddField("", fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).
-					WithColor(embed.ColorBlurple).WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+					WithColor(embed.ColorBlurple).WithFooterText("GRUPI").WithTimestamp(time.Now())
 
 				// Send the response as ephemeral
 				if err := e.CreateMessage(discord.NewMessageCreate().AddEmbeds(msgEmbed).AddFlags(discord.MessageFlagEphemeral)); err == nil {

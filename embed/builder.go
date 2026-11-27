@@ -39,7 +39,7 @@ func Build(kind Kind, title, msg string) discord.Embed {
 	}
 
 	return discord.NewEmbed().WithTitle(title).AddField("", msg, false).
-		WithColor(color).WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+		WithColor(color).WithFooterText("GRUPI").WithTimestamp(time.Now())
 }
 
 // Info returns a blurple themed embed.
