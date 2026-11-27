@@ -62,11 +62,31 @@ func messageCreate(e *events.MessageCreate) {
 	switch cmd {
 	case "help":
 		builder := styled(func(b discord.Embed) discord.Embed {
-			return b.WithTitle("ℹ️ Help").WithColor(embed.ColorBlurple).
-				AddField("Playback", "-play/-p <link|query> [-shuffle] [-loop] [-priority]\n-playlist/-pl <link> [-shuffle] [-loop] [-priority]\n-stream/-st <url>\n-previous/-prev | -nowplaying/-np", false).
-				AddField("Control", "-skip/-s | -clear/-c (clearqueue) | -pause/-pa | -resume/-r\n-disconnect/-dc (leave, stop)\n-seek <s|±s> | -forward | -backward | -skipto <n>\n-move <from> <to> | -remove/-rm <n> | -shuffle/-sh\n-loop | -autoplay | -volume/-vol <0-200> | -join", false).
-				AddField("Playlists", "-pl-create/-pl-delete <name>\n-pl-rename <old> <new> | -pl-list | -pl-info <name>\n-pl-play <name> [-shuffle] [-loop] [-priority] | -pl-playshuffle <name>\n-pl-removedupe <name> | -pl-removetrack <name> <pos>\n-pl-savecurrent <name> | -pl-savequeue <name>", false).
-				AddField("Other", "-help/-h", false)
+			return b.WithTitle("🎧 YADMB — Command Help").
+				WithDescription("Control the bot with **prefix commands** in any text channel — shortforms are shown in parentheses. The same actions exist as slash commands.").
+				WithColor(embed.ColorBlurple).
+				AddField("🎵 Playback",
+					"• `-play` / `-p` <link|query> [-shuffle] [-loop] [-priority]\n"+
+						"• `-playlist` / `-pl` <link> [-shuffle] [-loop] [-priority]\n"+
+						"• `-stream` / `-st` <url>\n"+
+						"• `-previous` / `-prev` • `-nowplaying` / `-np`", false).
+				AddField("🎛 Control",
+					"• `-skip` / `-s` • `-clear` / `-c`\n"+
+						"• `-pause` / `-pa` • `-resume` / `-r`\n"+
+						"• `-disconnect` / `-dc` (leave, stop)\n"+
+						"• `-seek` <s|±s> • `-forward` • `-backward` • `-skipto` <n>\n"+
+						"• `-move` <from> <to> • `-remove` / `-rm` <n> • `-shuffle` / `-sh`\n"+
+						"• `-loop` • `-autoplay` • `-volume` / `-vol` <0-200> • `-join`", false).
+				AddField("📚 Playlists",
+					"• `-pl-create` / `-pl-delete` <name>\n"+
+						"• `-pl-rename` <old> <new> • `-pl-list` • `-pl-info` <name>\n"+
+						"• `-pl-play` <name> [-shuffle] [-loop] [-priority] • `-pl-playshuffle` <name>\n"+
+						"• `-pl-removedupe` <name> • `-pl-removetrack` <name> <pos>\n"+
+						"• `-pl-savecurrent` <name> • `-pl-savequeue` <name>", false).
+				AddField("💡 Tips",
+					"• Queue position **1** = currently playing song.\n"+
+						"• `-pl-play` accepts flags; Spotify links work everywhere.\n"+
+						"• Use `-help` / `-h` anytime.", false)
 		})
 		sendMsg(e, builder, 30*time.Second)
 	case "play":
