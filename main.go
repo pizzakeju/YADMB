@@ -30,7 +30,6 @@ import (
 	"github.com/disgoorg/godave/golibdave"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/kkyr/fig"
 )
 
 var (
@@ -72,14 +71,13 @@ func init() {
 	})))
 	gin.SetMode(gin.ReleaseMode)
 
-	var cfg Config
-	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
+	cfg, err := loadConfig()
 	if err != nil {
-		slog.Error("Error loading config", "error", err)
+		slog.Error("Error loading configuration", "error", err)
 		return
 	}
 
-	// Config file found
+	// Configuration loaded, apply it
 	token = cfg.Token
 
 	owners = make(map[snowflake.ID]struct{}, len(cfg.Owner))
@@ -142,7 +140,7 @@ func init() {
 			for command, cmd := range commands[guild] {
 				srv.SetCustom(command, cmd)
 			}
-		}		
+		}
 	}
 
 	// Load the blacklist
@@ -201,7 +199,7 @@ func init() {
 
 func main() {
 	if token == "" {
-		slog.Error("No token provided. Please modify config.yml")
+		slog.Error("No token provided. Set TOKEN in the environment or config.yml")
 		return
 	}
 

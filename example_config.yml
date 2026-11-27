@@ -1,4 +1,8 @@
 # Example configuration file, remember to remove "example_" from the file after adding your tokens!
+#
+# All of the values below can instead be provided as environment variables
+# (this is the recommended way on Docker/Dokploy). See docs/install.md for the
+# full list of variables. Environment variables override config.yml values.
 
 # Discord Bot token:
 # To get your bot's token, go to https://discord.com/developers/applications click "New application",

@@ -20,8 +20,8 @@ type Config struct {
 }
 
 type apiToken struct {
-	UserID      snowflake.ID `fig:"userid" validate:"required"`
-	Token       string       `fig:"token" validate:"required"`
-	TextChannel snowflake.ID `fig:"textchannelid" validate:"required"`
-	Guild       snowflake.ID `fig:"guildid" validate:"required"`
+	UserID      snowflake.ID `fig:"userid" json:"userid" validate:"required"`
+	Token       string       `fig:"token" json:"token" validate:"required"`
+	TextChannel snowflake.ID `fig:"textchannelid" json:"textchannelid" validate:"required"`
+	Guild       snowflake.ID `fig:"guildid" json:"guildid" validate:"required"`
 }

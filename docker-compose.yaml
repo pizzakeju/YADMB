@@ -5,6 +5,23 @@ services:
     ports:
       - 8080:8080
     restart: always
+    # All configuration can be provided via environment variables (platforms
+    # like Dokploy set these directly). They override config.yml when both are
+    # present. See docs/install.md for a full list.
+    environment:
+      TOKEN: ${TOKEN:-}
+      OWNERS: ${OWNERS:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      WHITELIST: ${WHITELIST:-}
+      GUILD_LIST: ${GUILD_LIST:-}
+      HTTP_ADDRESS: ${HTTP_ADDRESS:-}
+      ORIGIN: ${ORIGIN:-}
+      API_TOKENS: ${API_TOKENS:-}
+      DATABASE_DSN: ${DATABASE_DSN:-}
+      DATABASE_DRIVER: ${DATABASE_DRIVER:-}
+      LOG_LEVEL: ${LOG_LEVEL:-}
     volumes:
       - ./audio_cache:/audio_cache
       - ./data:/data
