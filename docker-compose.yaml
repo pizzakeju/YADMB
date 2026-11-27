@@ -1,9 +1,10 @@
 version: '3.9'
 services:
   bot:
-    image: thetipo01/yadmb
-    ports:
-      - 8080:8080
+    # Build from this repository instead of pulling the upstream image, so
+    # that config changes (e.g. environment variable support) take effect.
+    build: .
+    image: pizzakeju/yadmb:local
     restart: always
     # All configuration can be provided via environment variables (platforms
     # like Dokploy set these directly). They override config.yml when both are
