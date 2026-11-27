@@ -26,6 +26,11 @@ import (
 // prefix introduces classic message commands, e.g. "-play <link>".
 const prefix = "-"
 
+// styled builds an embed with the shared footer.
+func styled(build func(b discord.Embed) discord.Embed) discord.Embed {
+	return build(discord.NewEmbed()).WithFooterText("YADMB music bot").WithTimestamp(time.Now())
+}
+
 // messageCreate handles prefix commands in guild text channels.
 func messageCreate(e *events.MessageCreate) {
 	if e.Message.Author.Bot || !strings.HasPrefix(e.Message.Content, prefix) {
@@ -38,7 +43,7 @@ func messageCreate(e *events.MessageCreate) {
 	guild := *e.GuildID
 
 	if ok, denied := guildAccess(e.Message.Author.ID, guild); !ok {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, denied, false).WithColor(0x7289DA), 3*time.Second)
+		sendMsg(e, embed.Error("❌ Error", denied), 3*time.Second)
 		return
 	}
 
@@ -56,9 +61,7 @@ func messageCreate(e *events.MessageCreate) {
 
 	switch cmd {
 	case "help":
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).
-			AddField("Prefix commands", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -dc | -help / -h", false).
-			WithColor(0x7289DA), 15*time.Second)
+		sendMsg(e, embed.Info("ℹ️ Help", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -dc | -help / -h"), 15*time.Second)
 	case "play":
 		playMessage(srv, e, fields[1:], false)
 	case "playlist":
@@ -204,18 +207,18 @@ func sendMsg(e *events.MessageCreate, emb discord.Embed, wait time.Duration) {
 
 func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, playlist bool) {
 	if len(args) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"play <link|query>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"play <link|query>"), 5*time.Second)
 		return
 	}
 
 	if djBlocked(srv, e) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.DjNot), 5*time.Second)
 		return
 	}
 
 	vs := manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID)
 	if vs == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
@@ -224,7 +227,7 @@ func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, pl
 		if err == vc.ErrAlreadyConnected {
 			msg = constants.BotInAnotherVC
 		}
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, msg, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", msg), 5*time.Second)
 		return
 	}
 
@@ -236,11 +239,11 @@ func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, pl
 		link, err = manager.FilterPlaylist(link)
 	}
 	if err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Playlist detected, but use "+prefix+"playlist instead.", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Playlist detected, but use "+prefix+"playlist instead."), 5*time.Second)
 		return
 	}
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.EnqueuedTitle, link, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Enqueued", link), 5*time.Second)
 
 	srv.Play(manager.PlayEvent{
 		Username:    e.Message.Author.Username,
@@ -257,23 +260,23 @@ func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, pl
 
 func streamMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) == 0 || !manager.IsValidURL(args[0]) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.InvalidURL, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.InvalidURL), 5*time.Second)
 		return
 	}
 
 	if djBlocked(srv, e) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.DjNot), 5*time.Second)
 		return
 	}
 
 	vs := manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID)
 	if vs == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
 	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
 
@@ -300,13 +303,13 @@ func streamMessage(srv *manager.Server, e *events.MessageCreate, args []string) 
 		Closer: stdout,
 	}
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.EnqueuedTitle, url, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Enqueued", url), 5*time.Second)
 	srv.AddSong(false, el)
 }
 
 func skipMessage(srv *manager.Server, e *events.MessageCreate) {
 	if manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID) == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
@@ -314,49 +317,51 @@ func skipMessage(srv *manager.Server, e *events.MessageCreate) {
 	if el != nil && srv.IsPlaying() {
 		srv.SkipSong(manager.Skip)
 		srv.Paused.Store(false)
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle,
-			el.Title+" - "+el.Duration+" added by "+el.User, false).WithColor(0x7289DA).WithThumbnail(el.Thumbnail), 5*time.Second)
+		sendMsg(e, styled(func(b discord.Embed) discord.Embed {
+			return b.WithTitle("⏭ Skipped").AddField("", el.Title+" - "+el.Duration+" added by "+el.User, false).
+				WithColor(embed.ColorGreen).WithThumbnail(el.Thumbnail)
+		}), 5*time.Second)
 	} else {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("⏭ Skipped", constants.QueueEmpty), 5*time.Second)
 	}
 }
 
 func clearMessage(srv *manager.Server, e *events.MessageCreate) {
 	if manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID) == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
 	if srv.IsPlaying() {
 		go srv.Clean()
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueCleared, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Success("🧹 Queue cleared", constants.QueueCleared), 5*time.Second)
 	} else {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("📋 Queue", constants.QueueEmpty), 5*time.Second)
 	}
 }
 
 func pauseMessage(srv *manager.Server, e *events.MessageCreate, pause bool) {
 	if manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID) == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("⏸ Pause", constants.QueueEmpty), 5*time.Second)
 		return
 	}
 
 	if pause {
 		if srv.PausePlayback() {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.Paused, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Success("⏸ Paused", constants.Paused), 5*time.Second)
 		} else {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.AlreadyPaused, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Warning("⏸ Pause", constants.AlreadyPaused), 5*time.Second)
 		}
 	} else {
 		if srv.ResumePlayback() {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.Resumed, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Success("▶️ Resumed", constants.Resumed), 5*time.Second)
 		} else {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.AlreadyResumed, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Warning("▶️ Resume", constants.AlreadyResumed), 5*time.Second)
 		}
 	}
 }
@@ -365,18 +370,20 @@ func queueMessage(srv *manager.Server, e *events.MessageCreate) {
 	const maxQueue = 10
 
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("📋 Queue", constants.QueueEmpty), 5*time.Second)
 		return
 	}
 
 	el := srv.Queue.GetAllQueue()
 	if len(el) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("📋 Queue", constants.QueueEmpty), 5*time.Second)
 		return
 	}
 
-	builder := discord.NewEmbed().WithTitle(manager.BotName).WithDescription(constants.QueueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
-		manager.FormatDuration(float64(srv.Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false)
+	builder := styled(func(b discord.Embed) discord.Embed {
+		return b.WithTitle("📋 Queue").WithColor(embed.ColorBlurple).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
+			manager.FormatDuration(float64(srv.Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false)
+	})
 
 	for j := 1; j < len(el) && j < maxQueue; j++ {
 		builder = builder.AddField(strconv.Itoa(j+1), fmt.Sprintf("[%s](%s) - %s added by %s\n", el[j].Title, el[j].Link, el[j].Duration, el[j].User), false)
@@ -386,8 +393,9 @@ func queueMessage(srv *manager.Server, e *events.MessageCreate) {
 		builder = builder.AddField("...", "And "+strconv.Itoa(len(el)-maxQueue)+" more", false)
 	}
 
-	sendMsg(e, builder.WithColor(0x7289DA), 20*time.Second)
+	sendMsg(e, builder, 20*time.Second)
 }
+
 func autoplayMessage(srv *manager.Server, e *events.MessageCreate) {
 	next := !srv.Autoplay.Load()
 	srv.Autoplay.Store(next)
@@ -395,7 +403,7 @@ func autoplayMessage(srv *manager.Server, e *events.MessageCreate) {
 	if next {
 		status = "enabled"
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Autoplay", "Autoplay "+status, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("🔁 Autoplay", "Autoplay "+status), 5*time.Second)
 }
 
 func loopMessage(srv *manager.Server, e *events.MessageCreate) {
@@ -405,13 +413,13 @@ func loopMessage(srv *manager.Server, e *events.MessageCreate) {
 	if next {
 		status = "enabled"
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Loop", "Loop "+status, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("🔁 Loop", "Loop "+status), 5*time.Second)
 }
 
 func joinMessage(srv *manager.Server, e *events.MessageCreate) {
 	vs := manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID)
 	if vs == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
@@ -420,30 +428,30 @@ func joinMessage(srv *manager.Server, e *events.MessageCreate) {
 		if err == vc.ErrAlreadyConnected {
 			msg = constants.BotInAnotherVC
 		}
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, msg, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", msg), 5*time.Second)
 		return
 	}
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Joined", "Joined the voice channel", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("🎧 Joined", "Joined the voice channel"), 5*time.Second)
 }
 
 func forwardMessage(srv *manager.Server, e *events.MessageCreate) {
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 		return
 	}
 
 	target := int(srv.Frames.Load()) + int(math.Trunc(10*constants.FrameSeconds))
 	if !srv.SeekFrame(target) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, constants.GotoInvalid, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.GotoInvalid), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, "Forwarded 10 seconds", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("⏩ Forward", "Forwarded 10 seconds"), 5*time.Second)
 }
 
 func backwardMessage(srv *manager.Server, e *events.MessageCreate) {
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 		return
 	}
 
@@ -451,41 +459,43 @@ func backwardMessage(srv *manager.Server, e *events.MessageCreate) {
 	case srv.Restart <- struct{}{}:
 	default:
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, "Restarted the current song", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("⏪ Backward", "Restarted the current song"), 5*time.Second)
 }
 
 func nowPlayingMessage(srv *manager.Server, e *events.MessageCreate) {
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 		return
 	}
 
 	el := srv.Queue.GetFirstElement()
 	if el == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Info("📋 Queue", constants.QueueEmpty), 5*time.Second)
 		return
 	}
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Now playing", fmt.Sprintf("[%s](%s) - %s/%s added by %s", el.Title, el.Link,
-		manager.FormatDuration(float64(srv.Frames.Load())/constants.FrameSeconds), el.Duration, el.User), false).
-		WithColor(0x7289DA).WithThumbnail(el.Thumbnail), 10*time.Second)
+	sendMsg(e, styled(func(b discord.Embed) discord.Embed {
+		return b.WithTitle("🎵 Now Playing").AddField("", fmt.Sprintf("[%s](%s) - %s/%s\nRequested by %s", el.Title, el.Link,
+			manager.FormatDuration(float64(srv.Frames.Load())/constants.FrameSeconds), el.Duration, el.User), false).
+			WithColor(embed.ColorBlurple).WithThumbnail(el.Thumbnail)
+	}), 10*time.Second)
 }
 
 func previousMessage(srv *manager.Server, e *events.MessageCreate) {
 	prev := srv.LastPlayed()
 	if prev == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "No previous song", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "No previous song"), 5*time.Second)
 		return
 	}
 
 	vs := manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID)
 	if vs == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
 	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
 
@@ -504,18 +514,18 @@ func previousMessage(srv *manager.Server, e *events.MessageCreate) {
 
 func seekMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"seek <seconds|±seconds>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"seek <seconds|±seconds>"), 5*time.Second)
 		return
 	}
 
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 		return
 	}
 
 	d, err := time.ParseDuration(args[0])
 	if err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.GotoInvalid), 5*time.Second)
 		return
 	}
 
@@ -524,83 +534,83 @@ func seekMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if strings.HasPrefix(args[0], "+") || strings.HasPrefix(args[0], "-") {
 		target = current + target
 	} else if target <= current {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoBackwards, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.GotoBackwards), 5*time.Second)
 		return
 	}
 
 	if !srv.SeekFrame(target) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.GotoInvalid), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, constants.SkippedTo+args[0], false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("⏩ Goto", constants.SkippedTo+args[0]), 5*time.Second)
 }
 
 func moveMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 2 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"move <from> <to>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"move <from> <to>"), 5*time.Second)
 		return
 	}
 
 	from, err1 := strconv.Atoi(args[0])
 	to, err2 := strconv.Atoi(args[1])
 	if err1 != nil || err2 != nil || from < 2 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Positions start at 1 (the current song is 1)", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Positions start at 1 (the current song is 1)"), 5*time.Second)
 		return
 	}
 
 	if err := srv.Queue.Move(from-1, to-1); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Position out of range", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Position out of range"), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Song moved", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Success", "Song moved"), 5*time.Second)
 }
 
 func removeMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"remove <position>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"remove <position>"), 5*time.Second)
 		return
 	}
 
 	n, err := strconv.Atoi(args[0])
 	if err != nil || n < 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Invalid position", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Invalid position"), 5*time.Second)
 		return
 	}
 
 	queue := srv.Queue.GetAllQueue()
 	if n >= len(queue) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Position out of range", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Position out of range"), 5*time.Second)
 		return
 	}
 
 	title := queue[n].Title
 	if err := srv.Queue.RemoveAt(n); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Removed: "+title, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("🗑 Removed", title), 5*time.Second)
 }
 
 func shuffleMessage(srv *manager.Server, e *events.MessageCreate) {
 	srv.Queue.ShuffleRemaining()
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Shuffle", "Queue shuffled", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("🔀 Shuffle", "Queue shuffled"), 5*time.Second)
 }
 
 func skiptoMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"skipto <position>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"skipto <position>"), 5*time.Second)
 		return
 	}
 
 	n, err := strconv.Atoi(args[0])
 	if err != nil || n < 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Invalid position", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Invalid position"), 5*time.Second)
 		return
 	}
 
 	queue := srv.Queue.GetAllQueue()
 	if n > len(queue) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Position out of range", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Position out of range"), 5*time.Second)
 		return
 	}
 
@@ -609,28 +619,28 @@ func skiptoMessage(srv *manager.Server, e *events.MessageCreate, args []string) 
 	}
 	srv.SkipSong(manager.Skip)
 	srv.Paused.Store(false)
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle, fmt.Sprintf("Skipped to %d", n), false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Info("⏭ Skipped", fmt.Sprintf("Skipped to %d", n)), 5*time.Second)
 }
 
 func volumeMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"volume <0-200>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"volume <0-200>"), 5*time.Second)
 		return
 	}
 
 	v, err := strconv.Atoi(args[0])
 	if err != nil || v < 0 || v > 200 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Volume must be between 0 and 200", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Volume must be between 0 and 200"), 5*time.Second)
 		return
 	}
 
 	srv.Volume.Store(int32(v))
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Volume", fmt.Sprintf("Volume set to %d%%", v), false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("🔊 Volume", fmt.Sprintf("Volume set to %d%%", v)), 5*time.Second)
 }
 
 func lyricsMessage(srv *manager.Server, e *events.MessageCreate) {
 	if !srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 		return
 	}
 
@@ -641,14 +651,16 @@ func lyricsMessage(srv *manager.Server, e *events.MessageCreate) {
 
 	lyrics, err := fetchLyrics(el.Title)
 	if err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 10*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 10*time.Second)
 		return
 	}
 
 	if len(lyrics) > 3900 {
 		lyrics = lyrics[:3900] + "..."
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).WithDescription(lyrics).WithColor(0x7289DA), 30*time.Second)
+	sendMsg(e, styled(func(b discord.Embed) discord.Embed {
+		return b.WithTitle("📜 Lyrics").WithDescription(lyrics).WithColor(embed.ColorBlurple)
+	}), 30*time.Second)
 }
 
 func fetchLyrics(query string) (string, error) {
@@ -678,47 +690,47 @@ func fetchLyrics(query string) (string, error) {
 
 func playlistCreateMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-create <name>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-create <name>"), 5*time.Second)
 		return
 	}
 
 	if err := clients.Database.CreatePlaylist(*e.GuildID, args[0]); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Playlist already exists", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Playlist already exists"), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Playlist created: "+args[0], false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Playlist created", args[0]), 5*time.Second)
 }
 
 func playlistDeleteMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-delete <name>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-delete <name>"), 5*time.Second)
 		return
 	}
 
 	if err := clients.Database.DeletePlaylist(*e.GuildID, args[0]); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Playlist deleted: "+args[0], false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Playlist deleted", args[0]), 5*time.Second)
 }
 
 func playlistRenameMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 2 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-rename <old> <new>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-rename <old> <new>"), 5*time.Second)
 		return
 	}
 
 	if err := clients.Database.RenamePlaylist(*e.GuildID, args[0], args[1]); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Playlist renamed", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Playlist renamed", fmt.Sprintf("%s → %s", args[0], args[1])), 5*time.Second)
 }
 
 func playlistListMessage(srv *manager.Server, e *events.MessageCreate) {
 	playlists := clients.Database.ListPlaylists(*e.GuildID)
 	if len(playlists) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Playlists", "No playlists yet. Use "+prefix+"pl-create <name>", false).WithColor(0x7289DA), 10*time.Second)
+		sendMsg(e, embed.Info("🎼 Playlists", "No playlists yet. Use "+prefix+"pl-create <name>"), 10*time.Second)
 		return
 	}
 
@@ -726,18 +738,18 @@ func playlistListMessage(srv *manager.Server, e *events.MessageCreate) {
 	for _, p := range playlists {
 		fmt.Fprintf(&b, "%s (%d songs)\n", p.Name, p.Count)
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Playlists", b.String(), false).WithColor(0x7289DA), 15*time.Second)
+	sendMsg(e, embed.Info("🎼 Playlists", b.String()), 15*time.Second)
 }
 
 func playlistInfoMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-info <name>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-info <name>"), 5*time.Second)
 		return
 	}
 
 	entries := clients.Database.GetPlaylistEntries(*e.GuildID, args[0])
 	if len(entries) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Playlist is empty or does not exist", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Playlist is empty or does not exist"), 5*time.Second)
 		return
 	}
 
@@ -749,12 +761,12 @@ func playlistInfoMessage(srv *manager.Server, e *events.MessageCreate, args []st
 		}
 		fmt.Fprintf(&b, "%d. %s\n", i+1, entry)
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField("Playlist: "+args[0], b.String(), false).WithColor(0x7289DA), 20*time.Second)
+	sendMsg(e, embed.Info("🎼 "+args[0], b.String()), 20*time.Second)
 }
 
 func playlistPlayMessage(srv *manager.Server, e *events.MessageCreate, args []string, forceShuffle bool) {
 	if len(args) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-play <name> [-shuffle] [-loop] [-priority]", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-play <name> [-shuffle] [-loop] [-priority]"), 5*time.Second)
 		return
 	}
 
@@ -766,23 +778,23 @@ func playlistPlayMessage(srv *manager.Server, e *events.MessageCreate, args []st
 
 	entries := clients.Database.GetPlaylistEntries(*e.GuildID, name)
 	if len(entries) == 0 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Playlist is empty or does not exist", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Playlist is empty or does not exist"), 5*time.Second)
 		return
 	}
 
 	if djBlocked(srv, e) {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.DjNot), 5*time.Second)
 		return
 	}
 
 	vs := manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID)
 	if vs == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
 	if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.CantJoinVC), 5*time.Second)
 		return
 	}
 
@@ -792,7 +804,7 @@ func playlistPlayMessage(srv *manager.Server, e *events.MessageCreate, args []st
 		})
 	}
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.EnqueuedTitle, fmt.Sprintf("Enqueued %d songs from %s", len(entries), name), false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Enqueued", fmt.Sprintf("Enqueued %d songs from %s", len(entries), name)), 5*time.Second)
 
 	go func() {
 		for _, song := range entries {
@@ -816,34 +828,34 @@ func playlistPlayMessage(srv *manager.Server, e *events.MessageCreate, args []st
 
 func playlistDedupeMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-removedupe <name>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-removedupe <name>"), 5*time.Second)
 		return
 	}
 
 	if err := clients.Database.RemoveDuplicates(*e.GuildID, args[0]); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Duplicates removed", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Duplicates removed", args[0]), 5*time.Second)
 }
 
 func playlistRemoveTrackMessage(srv *manager.Server, e *events.MessageCreate, args []string) {
 	if len(args) != 2 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Usage: "+prefix+"pl-removetrack <name> <position>", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Usage: "+prefix+"pl-removetrack <name> <position>"), 5*time.Second)
 		return
 	}
 
 	pos, err := strconv.Atoi(args[1])
 	if err != nil || pos < 1 {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "Invalid position", false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", "Invalid position"), 5*time.Second)
 		return
 	}
 
 	if err := clients.Database.RemoveFromPlaylist(*e.GuildID, args[0], pos); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, "Track removed", false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Track removed", fmt.Sprintf("%s #%d", args[0], pos)), 5*time.Second)
 }
 
 func playlistSaveMessage(srv *manager.Server, e *events.MessageCreate, args []string, saveQueue bool) {
@@ -852,7 +864,7 @@ func playlistSaveMessage(srv *manager.Server, e *events.MessageCreate, args []st
 		if saveQueue {
 			usage = "Usage: " + prefix + "pl-savequeue <name>"
 		}
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, usage, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", usage), 5*time.Second)
 		return
 	}
 
@@ -860,7 +872,7 @@ func playlistSaveMessage(srv *manager.Server, e *events.MessageCreate, args []st
 	if saveQueue {
 		queue := srv.Queue.GetAllQueue()
 		if len(queue) == 0 {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.QueueEmpty, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Error("❌ Error", constants.QueueEmpty), 5*time.Second)
 			return
 		}
 		entries = make([]string, 0, len(queue))
@@ -870,22 +882,22 @@ func playlistSaveMessage(srv *manager.Server, e *events.MessageCreate, args []st
 	} else {
 		el := srv.Queue.GetFirstElement()
 		if el == nil {
-			sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).WithColor(0x7289DA), 5*time.Second)
+			sendMsg(e, embed.Error("❌ Error", constants.NothingPlaying), 5*time.Second)
 			return
 		}
 		entries = []string{el.Link}
 	}
 
 	if err := clients.Database.SavePlaylist(*e.GuildID, args[0], entries); err != nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", err.Error()), 5*time.Second)
 		return
 	}
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, fmt.Sprintf("Saved %d songs to %s", len(entries), args[0]), false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("✅ Saved", fmt.Sprintf("Saved %d songs to %s", len(entries), args[0])), 5*time.Second)
 }
 
 func disconnectMessage(srv *manager.Server, e *events.MessageCreate) {
 	if manager.FindUserVoiceState(e.Client(), *e.GuildID, e.Message.Author.ID) == nil {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).WithColor(0x7289DA), 5*time.Second)
+		sendMsg(e, embed.Error("❌ Error", constants.NotInVC), 5*time.Second)
 		return
 	}
 
@@ -896,7 +908,7 @@ func disconnectMessage(srv *manager.Server, e *events.MessageCreate) {
 	srv.VC.Disconnect(ctx)
 	cancel()
 
-	sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).WithColor(0x7289DA), 5*time.Second)
+	sendMsg(e, embed.Success("👋 Disconnected", constants.Disconnected), 5*time.Second)
 }
 
 type playFlags struct {

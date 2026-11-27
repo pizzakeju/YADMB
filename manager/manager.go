@@ -145,10 +145,11 @@ func (server *Server) play(done chan struct{}) {
 
 		// Send "Now playing" message
 		go func() {
-			msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
-				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,
+			msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle("🎵 Now Playing").
+				AddField("", fmt.Sprintf("[%s](%s) - %s\nRequested by %s", el.Title,
 					el.Link, el.Duration, el.User), false).
-				WithColor(0x7289DA).WithThumbnail(el.Thumbnail), el.TextChannel)
+				WithColor(embed.ColorBlurple).WithThumbnail(el.Thumbnail).
+				WithFooterText("YADMB music bot").WithTimestamp(time.Now()), el.TextChannel)
 		}()
 
 		var err error
