@@ -51,8 +51,7 @@ func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.I
 			msg = constants.BotInAnotherVC
 		}
 
-		embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, msg, false).
-			WithColor(0x7289DA), e, time.Second*5, isDeferred)
+		embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", msg), e, time.Second*5, isDeferred)
 		return false
 	}
 

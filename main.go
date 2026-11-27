@@ -433,9 +433,7 @@ func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
 	// Ignores commands from DM
 	if e.Context() == discord.InteractionContextTypeGuild {
 		if _, ok := blacklist.Load(e.User().ID.String()); ok {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
-				constants.UserInBlacklist, false).
-				WithColor(0x7289DA), e, time.Second*3, nil)
+			embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", constants.UserInBlacklist), e, time.Second*3, nil)
 		} else {
 			if whitelist {
 				// Whitelist mode: check if the guild is in the list
@@ -444,9 +442,7 @@ func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
 						go h(e)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
-						constants.ServerNotInWhitelist, false).
-						WithColor(0x7289DA), e, time.Second*3, nil)
+					embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", constants.ServerNotInWhitelist), e, time.Second*3, nil)
 				}
 			} else {
 				// Blacklist mode: check if the guild is not in the list
@@ -455,21 +451,15 @@ func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
 						go h(e)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
-						constants.ServerInBlacklist, false).
-						WithColor(0x7289DA), e, time.Second*3, nil)
+					embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", constants.ServerInBlacklist), e, time.Second*3, nil)
 				}
 			}
 		}
 	} else {
 		if _, ok := blacklist.Load(e.User().ID.String()); ok {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
-				constants.UserInBlacklist, false).
-				WithColor(0x7289DA), e, time.Second*3, nil)
+			embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", constants.UserInBlacklist), e, time.Second*3, nil)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
-				constants.ErrorDM, false).
-				WithColor(0x7289DA), e, time.Second*15, nil)
+			embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", constants.ErrorDM), e, time.Second*15, nil)
 		}
 	}
 }

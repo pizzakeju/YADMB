@@ -5,9 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
-	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/zmb3/spotify/v2"
@@ -69,8 +67,7 @@ func (server *Server) Play(p PlayEvent) {
 		if err == nil {
 			server.downloadAndPlay(p, true)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).
-				AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(embed.Error("❌ Error", err.Error()), p.Event, time.Second*5, p.IsDeferred)
 		}
 	}
 }

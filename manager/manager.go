@@ -176,9 +176,9 @@ func (server *Server) play(done chan struct{}) {
 
 			// Notify the user
 			go func() {
-				processingMsg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
-					AddField(constants.ProcessingTitle, constants.Processing, false).
-					WithColor(0x7289DA), el.TextChannel)
+				processingMsg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle("⏳ Processing").
+					AddField("", constants.Processing, false).
+					WithColor(embed.ColorYellow).WithFooterText("YADMB music bot").WithTimestamp(time.Now()), el.TextChannel)
 			}()
 
 			// The background encoder keeps writing on its own, so there is no
@@ -193,17 +193,13 @@ func (server *Server) play(done chan struct{}) {
 		if el.AfterPlay != nil {
 			if err := el.AfterPlay(); err != nil {
 				go func() {
-					embed.SendAndDeleteEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
-						AddField(constants.ErrorTitle, err.Error(), false).
-						WithColor(0x7289DA), el.TextChannel, time.Second*15)
+					embed.SendAndDeleteEmbed(server.Clients.Discord, embed.Error("❌ Error", err.Error()), el.TextChannel, time.Second*15)
 				}()
 			}
 		}
 
 		if playErr != nil {
-			go embed.SendAndDeleteEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
-				AddField(constants.ErrorTitle, playErr.Error(), false).
-				WithColor(0x7289DA), el.TextChannel, time.Second*15)
+			go embed.SendAndDeleteEmbed(server.Clients.Discord, embed.Error("❌ Error", playErr.Error()), el.TextChannel, time.Second*15)
 		}
 
 		if skipReason == Finished {
