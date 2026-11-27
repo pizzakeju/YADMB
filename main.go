@@ -208,6 +208,8 @@ func main() {
 			gateway.WithIntents(
 				gateway.IntentGuildVoiceStates,
 				gateway.IntentGuilds,
+				gateway.IntentGuildMessages,
+				gateway.IntentMessageContent,
 			),
 		),
 
@@ -225,6 +227,7 @@ func main() {
 		bot.WithEventListenerFunc(voiceStateUpdate),
 		bot.WithEventListenerFunc(guildMemberUpdate),
 		bot.WithEventListenerFunc(interactionCreate),
+		bot.WithEventListenerFunc(messageCreate),
 
 		bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(golibdave.NewSession)),
 

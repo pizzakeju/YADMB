@@ -50,3 +50,21 @@ to true to play the song looped
 `/djrole <role>` - Sets the DJ role for the current server
 
 `/djroletoggle <user>` - Adds or removes the DJ role from the given user
+## Prefix commands
+
+The same core actions are available as classic chat messages prefixed with `-`,
+so the bot can be used without slash command autocompletion:
+
+- `-play <link|query>` - Plays a song from YouTube or Spotify (or searches the query). Optional flags: `-shuffle`, `-loop`, `-priority`
+- `-playlist <link> [-shuffle] [-loop] [-priority]` - Same as `-play`, but accepts playlists
+- `-stream <url>` - Streams a song from the given URL
+- `-skip` - Skips the currently playing song
+- `-clear` - Clears the queue
+- `-pause` / `-resume` - Pauses / resumes the current song
+- `-queue` - Shows the current queue
+- `-disconnect` - Disconnects the bot from the voice channel
+- `-help` - Lists the available prefix commands
+
+Prefix commands respect the same restrictions as slash commands: blacklist,
+whitelist and DJ mode apply. The bot needs the `MESSAGE CONTENT` intent
+enabled in the Discord developer portal for `-play <query>` style parsing.
