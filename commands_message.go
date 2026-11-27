@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"math/rand/v2"
 	"net/http"
@@ -230,6 +231,16 @@ func djBlocked(srv *manager.Server, e *events.MessageCreate) bool {
 // sendMsg sends an embed in the channel of the triggering message.
 func sendMsg(e *events.MessageCreate, emb discord.Embed, wait time.Duration) {
 	embed.SendAndDeleteEmbed(e.Client(), emb, e.ChannelID, wait)
+}
+
+// ensureVoice joins the channel and logs the underlying error on failure so
+// why a join failed is diagnosable from the logs.
+func ensureVoice(srv *manager.Server, channelID snowflake.ID) error {
+	err := srv.EnsureVoice(channelID)
+	if err != nil {
+		slog.Warn("failed to join voice channel", "guild", srv.GuildID, "channel", channelID, "error", err)
+	}
+	return err
 }
 
 func playMessage(srv *manager.Server, e *events.MessageCreate, args []string, playlist bool) {
