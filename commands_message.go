@@ -330,10 +330,8 @@ func disconnectMessage(srv *manager.Server, e *events.MessageCreate) {
 		return
 	}
 
-	if srv.IsPlaying() {
-		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.StillPlaying, false).WithColor(0x7289DA), 5*time.Second)
-		return
-	}
+	// Stop playback and clear the queue, then leave the voice channel.
+	go srv.Clean()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	srv.VC.Disconnect(ctx)

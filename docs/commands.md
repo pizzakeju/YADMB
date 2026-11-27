@@ -19,7 +19,7 @@ If it's not a valid link, it will insert into the queue the first result for the
 
 `/queue` - Prints the currently playing song and the next songs
 
-`/disconnect` - Disconnect the bot from the voice channel
+`/disconnect` - Stops playback and disconnects the bot from the voice channel
 
 `/restart` - Restarts the bot (works only for the bot owner, see `config.yml`)
 
@@ -64,7 +64,7 @@ a shortform in parentheses:
 - `-pause` / `-pa` - Pauses the current song
 - `-resume` / `-r` - Resumes the current song
 - `-queue` / `-q` - Shows the current queue
-- `-disconnect` / `-dc` - Disconnects the bot from the voice channel
+- `-disconnect` / `-dc` - Stops playback and disconnects the bot from the voice channel
 - `-help` / `-h` - Lists the available prefix commands
 
 Prefix commands respect the same restrictions as slash commands: blacklist,

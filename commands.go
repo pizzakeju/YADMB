@@ -393,17 +393,15 @@ var (
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if !getServer(guildID).IsPlaying() {
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					getServer(guildID).VC.Disconnect(ctx)
-					cancel()
+				// Stop playback and clear the queue, then leave the voice channel
+				go getServer(guildID).Clean()
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).
-						WithColor(0x7289DA), e, time.Second*5, c)
-				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.StillPlaying, false).
-						WithColor(0x7289DA), e, time.Second*5, c)
-				}
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				getServer(guildID).VC.Disconnect(ctx)
+				cancel()
+
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).
+					WithColor(0x7289DA), e, time.Second*5, c)
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
 					WithColor(0x7289DA), e, time.Second*5, c)
