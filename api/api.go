@@ -22,9 +22,11 @@ func NewApi(servers *manager.Servers, address string, owner map[snowflake.ID]str
 
 	conf := cors.DefaultConfig()
 	conf.AllowMethods = []string{"GET", "POST", "DELETE"}
-	conf.AllowOrigins = []string{origin}
-
-	r.Use(gin.Recovery(), cors.New(conf))
+	if origin == "" || origin == "*" {
+		conf.AllowAllOrigins = true
+	} else {
+		conf.AllowOrigins = []string{origin}
+	}
 
 	a := Api{
 		servers:  servers,

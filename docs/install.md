@@ -54,7 +54,6 @@ an environment variable. This is the recommended way on Docker and platforms
 like Dokploy, where you set variables in the UI and there is no config file.
 Environment variables override `config.yml` values when both are present.
 
-When running natively, a `.env` file next to the binary (or in `./data`) is
 loaded automatically, so you can fill it and run the bot without touching the
 environment.
 
@@ -68,7 +67,7 @@ environment.
 | `WHITELIST` | `true` to only respond to the guilds in `GUILD_LIST` |
 | `GUILD_LIST` | Comma-separated list of guild IDs |
 | `HTTP_ADDRESS` | Web server address, e.g. `:8080` or `unix:///tmp/yadmb.sock` (empty disables the API) |
-| `ORIGIN` | Allowed origin for CORS and web UI links |
+| `ORIGIN` | Allowed origin for CORS and web UI links. Empty or `*` allows any origin |
 | `API_TOKENS` | JSON array of long-lived API tokens, e.g. `[{"userid":"123","token":"correct-horse-battery-staple","textchannelid":"456","guildid":"789"}]` |
 | `DATABASE_DSN` | Data source name, e.g. `./data/yadmb.db` (sqlite) or `user:pass@tcp(ip:3306)/database` (mysql) |
 | `DATABASE_DRIVER` | `sqlite` or `mysql` |
