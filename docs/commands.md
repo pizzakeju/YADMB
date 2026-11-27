@@ -64,7 +64,7 @@ a shortform in parentheses:
 - `-pause` / `-pa` - Pauses the current song
 - `-resume` / `-r` - Resumes the current song
 - `-queue` / `-q` - Shows the current queue
-- `-disconnect` / `-d` - Disconnects the bot from the voice channel
+- `-disconnect` / `-dc` - Disconnects the bot from the voice channel
 - `-help` / `-h` - Lists the available prefix commands
 
 Prefix commands respect the same restrictions as slash commands: blacklist,

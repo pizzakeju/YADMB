@@ -52,7 +52,7 @@ func messageCreate(e *events.MessageCreate) {
 	switch cmd {
 	case "help":
 		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).
-			AddField("Prefix commands", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -d | -help / -h", false).
+			AddField("Prefix commands", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -dc | -help / -h", false).
 			WithColor(0x7289DA), 15*time.Second)
 	case "play":
 		playMessage(srv, e, fields[1:], false)
@@ -85,7 +85,7 @@ var commandAliases = map[string]string{
 	"pa": "pause",
 	"r":  "resume",
 	"q":  "queue",
-	"d":  "disconnect",
+	"dc": "disconnect",
 	"h":  "help",
 }
 
