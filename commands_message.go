@@ -42,12 +42,17 @@ func messageCreate(e *events.MessageCreate) {
 		return
 	}
 
+	cmd := strings.ToLower(fields[0])
+	if canonical, ok := commandAliases[cmd]; ok {
+		cmd = canonical
+	}
+
 	srv := getServer(guild)
 
-	switch strings.ToLower(fields[0]) {
+	switch cmd {
 	case "help":
 		sendMsg(e, discord.NewEmbed().WithTitle(manager.BotName).
-			AddField("Prefix commands", "-play <link|query>\n-playlist <link> [-shuffle] [-loop] [-priority]\n-stream <url>\n-skip | -clear | -pause | -resume | -queue\n-disconnect | -help", false).
+			AddField("Prefix commands", "-play / -p <link|query>\n-playlist / -pl <link> [-shuffle] [-loop] [-priority]\n-stream / -st <url>\n-skip / -s | -clear / -c | -pause / -pa | -resume / -r\n-queue / -q | -disconnect / -d | -help / -h", false).
 			WithColor(0x7289DA), 15*time.Second)
 	case "play":
 		playMessage(srv, e, fields[1:], false)
@@ -68,6 +73,20 @@ func messageCreate(e *events.MessageCreate) {
 	case "disconnect":
 		disconnectMessage(srv, e)
 	}
+}
+
+// commandAliases maps shortforms to canonical prefix commands.
+var commandAliases = map[string]string{
+	"p":  "play",
+	"pl": "playlist",
+	"st": "stream",
+	"s":  "skip",
+	"c":  "clear",
+	"pa": "pause",
+	"r":  "resume",
+	"q":  "queue",
+	"d":  "disconnect",
+	"h":  "help",
 }
 
 // guildAccess returns whether the user may run commands in this guild, plus a
